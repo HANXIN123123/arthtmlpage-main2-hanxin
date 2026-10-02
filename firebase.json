@@ -1,0 +1,7 @@
+{
+  "database": {"rules": "database.rules.json"},
+  "auth": {
+    "authorizedDomains": ["hanxin123123.github.io", "artmug-hanxin2.firebaseapp.com", "artmug-hanxin2.web.app", "localhost"],
+    "providers": {"anonymous": true}
+  }
+}
