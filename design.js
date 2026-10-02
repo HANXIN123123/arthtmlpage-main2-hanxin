@@ -35,7 +35,12 @@
  sheet.querySelector('[data-window="close"]').addEventListener('click',()=>{sheet.hidden=true;reopen.hidden=false;reopen.focus({preventScroll:true});});
  reopen.addEventListener('click',()=>{sheet.hidden=false;reopen.hidden=true;expandContent();minimize.focus({preventScroll:true});});
  const photo=document.querySelector('.profile-photo');photo.style.setProperty('--profile-url',`url(${JSON.stringify(designConfig.profileImage)})`);
- // 헤더 이외의 첫 화면 신청 버튼도 접힌 양식을 열고 내부 스크롤합니다.
- document.querySelector('.hero-cta').addEventListener('click',event=>{event.preventDefault();document.querySelector('.topnav a[href="#section-request"]').click();});
+ // 버튼의 목적지를 따라가며 iframe 이동과 접힌 섹션 열기는 네비게이션과 공유합니다.
+ document.querySelector('.hero-cta').addEventListener('click',event=>{
+   const href=event.currentTarget.getAttribute('href');
+   const link=Array.from(document.querySelectorAll('.topnav a[href^="#"]')).find(item=>item.getAttribute('href')===href);
+   if(link){event.preventDefault();link.click();}
+ });
  document.querySelectorAll('.pf-type-tabs').forEach(tabs=>tabs.addEventListener('click',event=>{const button=event.target.closest('button');if(button)tabs.scrollTo({left:button.offsetLeft-tabs.offsetLeft-(tabs.clientWidth-button.offsetWidth)/2,behavior:'smooth'});}));
 })();
+
