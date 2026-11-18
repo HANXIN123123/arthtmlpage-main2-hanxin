@@ -13,14 +13,32 @@
 
   let parentOrigin = null, bridge = false, navOffset = 0;
   let inquiryTimer = null;
+  let fullHeight = false;
   try { parentOrigin = new URL(document.referrer).origin; } catch (_) {}
   function post(type, data = {}) {
     if (embedded && parentOrigin) window.parent.postMessage({channel,type,...data},parentOrigin);
+  }
+  function observeContentHeight() {
+    const body = document.body;
+    let lastHeight = 0;
+    new ResizeObserver(() => {
+      // Measure the body box so an expanded iframe cannot impose a minimum height.
+      const bottomMargin = parseFloat(getComputedStyle(body).marginBottom) || 0;
+      const height = Math.ceil(body.getBoundingClientRect().bottom + window.scrollY + bottomMargin);
+      if (height > 0 && height !== lastHeight) {
+        lastHeight = height;
+        post('content-height', {height});
+      }
+    }).observe(body, {box:'border-box'});
   }
   window.addEventListener('message',event=>{
     if(event.source !== window.parent || !parentOrigin || event.origin !== parentOrigin || event.data?.channel !== channel) return;
     if(event.data.type === 'context'){window.artmugContext=event.data;window.dispatchEvent(new CustomEvent('artmug-context'));}
     if(event.data.type === 'viewport' && Number.isFinite(event.data.top)) {
+      if (event.data.fullHeight === true && !fullHeight) {
+        fullHeight = true;
+        observeContentHeight();
+      }
       window.artmugViewport=event.data;
       window.dispatchEvent(new Event('artmug-viewport'));
       bridge = true;
@@ -73,8 +91,13 @@
       event.preventDefault();
       const header=target.querySelector('.main-acc-header');
       if(header && !header.classList.contains('open'))header.click();
+      const top = target.getBoundingClientRect().top + window.scrollY;
+      if (fullHeight) {
+        post('navigate', {top});
+        return;
+      }
       post('align');
-      window.scrollTo({top:Math.max(0,target.getBoundingClientRect().top+window.scrollY-70),behavior:'smooth'});
+      window.scrollTo({top:Math.max(0,top-70),behavior:'smooth'});
     });
   });
   if(embedded) {

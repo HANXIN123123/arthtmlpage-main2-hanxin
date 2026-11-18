@@ -5,14 +5,16 @@
   const siteBase = new URL(".", script.src);
   const siteOrigin = siteBase.origin;
   // 편집기가 감싼 문단이 있어도 스크립트 앞의 같은 사이트 iframe을 찾습니다.
-  const frame = Array.from(document.querySelectorAll('iframe')).reverse().find(candidate => {
+  const frame = Array.from(document.getElementsByTagName('iframe')).reverse().find(candidate => {
     if (!(script.compareDocumentPosition(candidate) & Node.DOCUMENT_POSITION_PRECEDING)) return false;
     try { const url = new URL(candidate.src); return url.origin === siteOrigin && url.pathname.startsWith(siteBase.pathname); } catch (_) { return false; }
   });
   const attached = Symbol.for('artmug.embed.bridge');
   if (!frame || frame[attached]) return;
   frame[attached] = true;
-  const origin = new URL(frame.src).origin;
+  const frameURL = new URL(frame.src);
+  const origin = frameURL.origin;
+  const fullHeight = frameURL.searchParams.get('embed') === 'full';
   const channel = 'artmug-embed-v1';
   // 자식 페이지가 아직 로드되지 않았어도 PC→모바일 이동의 표식을 이어갑니다.
   let boardEntry=false;
@@ -34,12 +36,15 @@
   }
   function report() {
     scheduled = false;
-    const height = Math.max(320, Math.min(900, window.innerHeight - 24));
-    frame.style.height = height + 'px';
-    frame.style.minHeight = '0';
+    if (!fullHeight) {
+      const height = Math.max(320, Math.min(900, window.innerHeight - 24));
+      frame.style.height = height + 'px';
+      frame.style.minHeight = '0';
+    }
     const rect = frame.getBoundingClientRect();
     post('context',{url:location.href,boardEntry});
     post('viewport', {
+      fullHeight,
       frameTop:rect.top,
       top: Math.max(0, -rect.top),
       visibleHeight: Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(0, rect.top))
@@ -90,6 +95,19 @@ overlay.append(image,close); document.body.appendChild(overlay);
   window.addEventListener('message',event=>{
     if(event.source !== frame.contentWindow || event.origin !== origin || event.data?.channel !== channel) return;
     if(event.data.type === 'ready') schedule();
+    if (fullHeight && event.data.type === 'content-height') {
+      const {height} = event.data;
+      if (Number.isSafeInteger(height) && height > 0) frame.style.height = height + 'px';
+      return;
+    }
+    if (fullHeight && event.data.type === 'navigate') {
+      const {top} = event.data;
+      const rect = frame.getBoundingClientRect();
+      if (Number.isFinite(top) && top >= 0 && top <= rect.height) {
+        window.scrollTo({top:Math.max(0, window.scrollY + rect.top + top - 70),behavior:'smooth'});
+      }
+      return;
+    }
     if(event.data.type === 'video-open' && /^[\w-]{11}$/.test(event.data.id || '')){
       const play=()=>window.openVideoDialog(event.data.id);
       if(window.openVideoDialog)play();else{const el=document.createElement('script');el.src=new URL('./video-dialog.js',script.src).href;el.onload=play;document.head.append(el);}
@@ -112,6 +130,6 @@ overlay.append(image,close); document.body.appendChild(overlay);
   window.addEventListener('resize',schedule,{passive:true});
   frame.addEventListener('load',schedule);
   new ResizeObserver(schedule).observe(frame);
-  frame.scrolling = 'auto';
+  frame.scrolling = fullHeight ? 'no' : 'auto';
   schedule();
 })();
