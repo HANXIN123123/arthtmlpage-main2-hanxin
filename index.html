@@ -465,6 +465,7 @@ ul,ol{list-style:none;}
 }
 </style>
 <link rel="stylesheet" href="./design.css">
+<link rel="stylesheet" href="./portfolio-view.css?v=0.0.2">
 <script src="./design-config.js"></script>
 </head>
 <body>
@@ -675,20 +676,7 @@ ul,ol{list-style:none;}
         </div>
         <span class="main-acc-arrow">▼</span>
       </div>
-      <div class="main-acc-body open" id="acc-body-portfolio">
-        <div class="portfolio-cat-tabs fade-in">
-          <button class="pf-tab-btn active" data-pftab="image">🖼️ 이미지 포트폴리오</button>
-          <button class="pf-tab-btn" data-pftab="video">🎬 영상 포트폴리오</button>
-        </div>
-        <div class="portfolio-panel" id="pf-video">
-          <div class="pf-type-tabs" id="videoTypeTabs"></div>
-          <div id="videoTypeSections"></div>
-        </div>
-        <div class="portfolio-panel active" id="pf-image">
-          <div class="pf-type-tabs" id="imageTypeTabs"></div>
-          <div id="imageTypeSections"></div>
-        </div>
-      </div>
+      <div class="main-acc-body open" id="acc-body-portfolio"><p role="status">포트폴리오를 불러오는 중입니다.</p></div>
     </div>
 
     <!-- ⑤ 신청 양식 & 견적 계산기 -->
@@ -746,7 +734,7 @@ ul,ol{list-style:none;}
   <img class="lightbox-img" id="lightboxImg" src="" alt="">
 </div>
 
-<script src="./portfolio-carousel.js"></script>
+<script src="./portfolio-carousel.js?v=0.0.2"></script>
 <script>
 /* ============================================================
    TOPNAV
@@ -782,7 +770,7 @@ document.querySelectorAll('.main-acc-header').forEach(header=>{
     const isOpen=header.classList.contains('open');
     header.classList.toggle('open',!isOpen);
     body.classList.toggle('open',!isOpen);
-    if(!isOpen){setTimeout(()=>{resizeAllSliders();resizeAllImgSliders();},50);}
+
   });
 });
 
@@ -840,162 +828,7 @@ renderCalendar(calYear,calMonth);
 /* ============================================================
    포트폴리오
 ============================================================ */
-// Firebase 포트폴리오는 portfolio-sync.js에서 실시간으로 렌더링합니다.
-
-function buildYoutubeSlider(typeData,contEl,tabsEl){
-  tabsEl.innerHTML='';contEl.innerHTML='';
-  typeData.forEach((cat,idx)=>{
-    const btn=document.createElement('button');
-    btn.className='pf-type-btn'+(idx===0?' active':'');
-    btn.textContent=cat.title;btn.dataset.typeIdx=idx;
-    tabsEl.appendChild(btn);
-    const sec=document.createElement('div');
-    sec.className='pf-type-section'+(idx===0?' active':'');
-    sec.dataset.typeIdx=idx;
-    const root=document.createElement('div');root.className='slider-root';
-    const stage=document.createElement('div');stage.className='slider-stage';
-    cat.videos.forEach((vid,i)=>{
-      const slide=document.createElement('div');
-      slide.className='slider-slide'+(i===0?' active':'');
-      // yt-nocookie 도메인 + 파라미터로 오류 153 회피
-      const iframe=document.createElement('iframe');
-      iframe.src=`https://www.youtube-nocookie.com/embed/${vid}?rel=0&modestbranding=1`;
-      iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
-      iframe.allowFullscreen=true;
-      iframe.setAttribute('loading','lazy');
-      slide.appendChild(iframe);stage.appendChild(slide);
-    });
-    const pBtn=document.createElement('button');pBtn.className='slider-btn prev';pBtn.textContent='❮';
-    const nBtn=document.createElement('button');nBtn.className='slider-btn next';nBtn.textContent='❯';
-    stage.appendChild(pBtn);stage.appendChild(nBtn);
-    const dotsEl=document.createElement('div');dotsEl.className='slider-dots';
-    const twrap=document.createElement('div');twrap.className='slider-thumbs-wrap';
-    const thumbs=document.createElement('div');thumbs.className='slider-thumbs';
-    cat.videos.forEach((vid,i)=>{
-      const tb=document.createElement('button');tb.className='slider-thumb-btn'+(i===0?' active':'');
-      const img=document.createElement('img');
-      img.src=`https://img.youtube.com/vi/${vid}/hqdefault.jpg`;img.alt=`썸네일${i+1}`;
-      tb.appendChild(img);thumbs.appendChild(tb);
-    });
-    twrap.appendChild(thumbs);
-    root.appendChild(stage);root.appendChild(dotsEl);root.appendChild(twrap);
-    sec.appendChild(root);contEl.appendChild(sec);
-    initSlider(root,cat.videos.length);
-  });
-  tabsEl.querySelectorAll('.pf-type-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const idx=btn.dataset.typeIdx;
-      tabsEl.querySelectorAll('.pf-type-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      contEl.querySelectorAll('.pf-type-section').forEach(s=>s.classList.toggle('active',s.dataset.typeIdx===idx));
-      setTimeout(()=>resizeAllSliders(),10);
-    });
-  });
-}
-
-function buildImageSlider(typeData,contEl,tabsEl){
-  tabsEl.innerHTML='';contEl.innerHTML='';
-  typeData.forEach((cat,idx)=>{
-    const btn=document.createElement('button');
-    btn.className='pf-type-btn'+(idx===0?' active':'');
-    btn.textContent=cat.title;btn.dataset.typeIdx=idx;
-    tabsEl.appendChild(btn);
-    const sec=document.createElement('div');
-    sec.className='pf-type-section'+(idx===0?' active':'');
-    sec.dataset.typeIdx=idx;
-    const root=document.createElement('div');root.className='img-slider-root';
-    const stage=document.createElement('div');stage.className='img-stage';
-    cat.images.forEach((src,i)=>{
-      const slide=document.createElement('div');slide.className='img-slide'+(i===0?' active':'');
-      const img=document.createElement('img');img.src=src;img.alt=`${cat.title} ${i+1}`;
-      slide.appendChild(img);stage.appendChild(slide);
-    });
-    const pBtn=document.createElement('button');pBtn.className='slider-btn prev';pBtn.textContent='❮';
-    const nBtn=document.createElement('button');nBtn.className='slider-btn next';nBtn.textContent='❯';
-    stage.appendChild(pBtn);stage.appendChild(nBtn);
-    const dotsEl=document.createElement('div');dotsEl.className='slider-dots';
-    const twrap=document.createElement('div');twrap.className='slider-thumbs-wrap';
-    const thumbs=document.createElement('div');thumbs.className='slider-thumbs';
-    cat.images.forEach((src,i)=>{
-      const tb=document.createElement('button');tb.className='slider-thumb-btn'+(i===0?' active':'');
-      const img=document.createElement('img');img.src=src;img.alt=`thumb${i+1}`;
-      tb.appendChild(img);thumbs.appendChild(tb);
-    });
-    twrap.appendChild(thumbs);
-    root.appendChild(stage);root.appendChild(dotsEl);root.appendChild(twrap);
-    sec.appendChild(root);contEl.appendChild(sec);
-    initImgSlider(root,cat.images);
-  });
-  tabsEl.querySelectorAll('.pf-type-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const idx=btn.dataset.typeIdx;
-      tabsEl.querySelectorAll('.pf-type-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      contEl.querySelectorAll('.pf-type-section').forEach(s=>s.classList.toggle('active',s.dataset.typeIdx===idx));
-      setTimeout(()=>resizeAllImgSliders(),10);
-    });
-  });
-}
-
-function initSlider(root,total){
-  const stage=root.querySelector('.slider-stage');
-  const carousel=initPortfolioCarousel(root,'.slider-slide');
-  function resize(){
-    const w=stage.clientWidth;
-    stage.style.height=(w*9/16)+'px';
-    const iw=Math.min(w*0.96,880);
-    root.querySelectorAll('iframe').forEach(f=>{f.style.width=iw+'px';f.style.height=(iw*9/16)+'px';});
-    const tw=Math.max(window.innerWidth*0.14,100);
-    root.querySelectorAll('.slider-thumb-btn').forEach(b=>{b.style.width=tw+'px';b.style.height=(tw*9/16)+'px';});
-    carousel.center('auto');
-  }
-  resize();window.addEventListener('resize',resize);root._resize=resize;
-}
-
-function initImgSlider(root,images){
-  const stage=root.querySelector('.img-stage');
-  const carousel=initPortfolioCarousel(root,'.img-slide');
-  stage.addEventListener('click',event=>{
-    // 이미지 자체를 클릭했을 때만 확대합니다. 화살표 클릭은 이동만 합니다.
-    if(!event.target.matches('.img-slide.active img')) return;
-    openPortfolioImage(event.target.src,event.target.alt);
-  });
-  function resize(){
-    const w=stage.clientWidth;stage.style.height=(w*9/16)+'px';
-    const tw=Math.max(window.innerWidth*0.14,100);
-    root.querySelectorAll('.slider-thumb-btn').forEach(b=>{b.style.width=tw+'px';b.style.height=(tw*9/16)+'px';});
-    carousel.center('auto');
-  }
-  resize();window.addEventListener('resize',resize);root._resize=resize;
-}
-
-function resizeAllSliders(){document.querySelectorAll('.slider-root').forEach(r=>{if(r._resize)r._resize();});}
-function resizeAllImgSliders(){document.querySelectorAll('.img-slider-root').forEach(r=>{if(r._resize)r._resize();});}
-
-document.querySelectorAll('.pf-tab-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.pf-tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab=btn.dataset.pftab;
-    document.querySelectorAll('.portfolio-panel').forEach(p=>p.classList.toggle('active',p.id===`pf-${tab}`));
-    setTimeout(()=>{resizeAllSliders();resizeAllImgSliders();},20);
-  });
-});
-
-document.getElementById('videoTypeSections').textContent='포트폴리오를 불러오는 중입니다...';
-document.getElementById('imageTypeSections').textContent='포트폴리오를 불러오는 중입니다...';
-
-/* ============================================================
-   라이트박스
-============================================================ */
-
-
-/* ============================================================
-   견적 계산기
-============================================================ */
-/* ============================================================
-   fade-in
-============================================================ */
+// 페이지 섹션 등장 효과
 const obs=new IntersectionObserver(entries=>{
   entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});
 },{threshold:0.05});
@@ -1008,13 +841,14 @@ window.addEventListener('load',()=>parent.postMessage({type:'sliderHeight',value
 <script src="./embed-client.js"></script>
 <script src="./inquiry-ui.js"></script>
 <script src="./reviews.js"></script>
-<script src="./portfolio-grid.js"></script>
+<script src="./portfolio-model.js?v=0.0.2"></script>
+<script src="./portfolio-view.js?v=0.0.2"></script>
 <script src="./design.js"></script>
 <script src="./estimate.js"></script>
 <script src="./analytics-geometry.js"></script>
 <script src="./firebase-analytics.js"></script>
 <script src="./analytics-runtime.js"></script>
-<script type="module" src="./portfolio-sync.js"></script>
+<script type="module" src="./portfolio-sync.js?v=0.0.2"></script>
 <footer class="container" style="text-align:center;padding:15px 20px 55px;color:#a08aaa;font-size:11px;letter-spacing:.15em">HANXIN DESIGN · 시선을 끄는 디자인</footer>
 </body>
 </html>

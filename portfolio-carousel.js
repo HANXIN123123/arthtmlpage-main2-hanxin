@@ -1,5 +1,5 @@
 // 영상과 이미지에서 동일한 탐색, 동그라미 창, 썸네일 스크롤을 사용합니다.
-function initPortfolioCarousel(root, slideSelector) {
+function initPortfolioCarousel(root, slideSelector, initialIndex = 0) {
   const slides = Array.from(root.querySelectorAll(slideSelector));
   const thumbs = Array.from(root.querySelectorAll('.slider-thumb-btn'));
   const dots = root.querySelector('.slider-dots');
@@ -75,6 +75,6 @@ function initPortfolioCarousel(root, slideSelector) {
     thumb.setAttribute('aria-label', (index + 1) + '번째 포트폴리오 보기');
     thumb.addEventListener('click', () => goTo(index));
   });
-  goTo(0,false);
+  goTo(initialIndex,false);
   return { center };
 }
